@@ -15,6 +15,9 @@ import java.util.*;
 public class CommandParser {
     private final MainCommandAdapter mainCommands = new MainCommandAdapter();
     private final ParserConfig parserConfig;
+    private final List<String> remaining = new ArrayList<>();
+    private final List<List<String>> commandsParts = new ArrayList<>();
+    private boolean inQuotes;
 
     /**
      * Creates a new command parser with the given parser configuration.
@@ -30,6 +33,21 @@ public class CommandParser {
      */
     public CommandParser() {
         this.parserConfig = new DefaultParserConfig();
+    }
+
+    /**
+     * Reviews if the command line was complete.
+     * @return True if the command line was complete, false otherwise.
+     */
+    public boolean isCommandComplete() {
+        return remaining.isEmpty();
+    }
+
+    /**
+     * Clears the remaining command line.
+     */
+    public void clearRemainingCommand() {
+        remaining.clear();
     }
 
     /**
@@ -196,7 +214,11 @@ public class CommandParser {
         if (line == null || line.isBlank()) {
             return;
         }
-        List<List<String>> commandsParts = parseArgLine(line.trim());
+        if (!remaining.isEmpty()) {
+            commandsParts.add(new ArrayList<>(remaining));
+            remaining.clear();
+        }
+        parseArgLine(line.trim());
         for (int i = 0; i < commandsParts.size(); i++) {
             String main = commandsParts.get(i).getFirst();
             if (!mainCommands.containsKey(main)) {
@@ -207,11 +229,11 @@ public class CommandParser {
                 commandsParts.get(i).add(1, ParserConfig.FULL_OPTION_PREFIX + mainCommands.get(main).getConfig().mainOptionName());
             }
         }
-        parseArgs(commandsParts);
+        parseArgs();
     }
 
-    private void parseArgs(List<List<String>> commandsParts) throws Exception {
-        for (List<String> commandParts : commandsParts) {
+    private void parseArgs() throws Exception {
+        for (List<String> commandParts : new ArrayList<>(commandsParts)) {
             Map<Option, List<String>> args = new LinkedHashMap<>();
             String key = null;
             String main = commandParts.getFirst();
@@ -243,18 +265,17 @@ public class CommandParser {
             for (Option k : sortedKeys) {
                 k.getTask().run(args.get(k));
             }
+            commandsParts.remove(commandParts);
         }
 
     }
 
-    private List<List<String>> parseArgLine(String args) {
+    private void parseArgLine(String args) {
         if (args == null || args.isBlank()) {
-            return new ArrayList<>();
+            return;
         }
-        List<String> result = new ArrayList<>();
-        List<List<String>> results = new ArrayList<>();
+        List<String> result = commandsParts.isEmpty() ? new ArrayList<>() : commandsParts.removeFirst();
         StringBuilder currentElement = new StringBuilder();
-        boolean inQuotes = false;
 
         for (int i = 0; i < args.length(); i++) {
             char c = args.charAt(i);
@@ -286,7 +307,7 @@ public class CommandParser {
                     currentElement.setLength(0);
                 }
                 if (takeCareOfEOS(c, true) && !result.isEmpty()) {
-                    results.add(result);
+                    commandsParts.add(result);
                     result = new ArrayList<>();
                 }
             } else if (inQuotes || c != ' ') {
@@ -299,10 +320,13 @@ public class CommandParser {
         }
 
         if (parserConfig.endOfStatement() == ParserConfig.NO_EOS) {
-            results.add(result);
+            commandsParts.add(result);
+        } else {
+            if (!result.isEmpty()) {
+                remaining.addAll(result);
+            }
         }
 
-        return results;
     }
 
     private boolean takeCareOfQuote(char q, boolean want) {
