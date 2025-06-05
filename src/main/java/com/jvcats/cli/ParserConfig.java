@@ -1,12 +1,15 @@
 package com.jvcats.cli;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * This interface defines the configuration of a parser.
  * One can implement this interface to customize the behavior of a parser.
  */
 public interface ParserConfig {
 
-    char NO_QUOTE = '\0';
+    List<Character> NO_QUOTE = Collections.emptyList();
 
     char DELIMITER = ' ';
 
@@ -19,13 +22,13 @@ public interface ParserConfig {
     String FULL_OPTION_PREFIX = "--";
 
     /**
-     * Sets the quote character for the command.
+     * Sets the quote characters for the command.
      * The quote character is used to enclose the value of the option if it contains delimiters or spaces.
-     * The default quote character is '\0', which means no quote is used.
+     * The default quote characters is empty, which means no quote is used.
      *
-     * @return the quote character.
+     * @return the quote characters.
      */
-    default char quote() {
+    default List<Character> quotes() {
         return NO_QUOTE;
     }
 

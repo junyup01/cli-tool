@@ -17,7 +17,7 @@ public class CommandParser {
     private final ParserConfig parserConfig;
     private final List<String> remaining = new ArrayList<>();
     private final List<List<String>> commandsParts = new ArrayList<>();
-    private boolean inQuotes;
+    private final Deque<Character> inQuotes = new ArrayDeque<>();
 
     /**
      * Creates a new command parser with the given parser configuration.
@@ -281,9 +281,9 @@ public class CommandParser {
             char c = args.charAt(i);
 
             if (takeCareOfQuote(c, true)) {
-                inQuotes = !inQuotes;
+                switchInQuotes(c);
                 currentElement.append(c);
-                if (!inQuotes) {
+                if (inQuotes.isEmpty()) {
                     result.add(currentElement.toString().trim());
                     currentElement.setLength(0);
                 }
@@ -301,7 +301,7 @@ public class CommandParser {
                 continue;
             }
 
-            if ((c == parserConfig.delimiter() || takeCareOfEOS(c, true)) && !inQuotes) {
+            if ((c == parserConfig.delimiter() || takeCareOfEOS(c, true)) && inQuotes.isEmpty()) {
                 if (!currentElement.isEmpty()) {
                     result.add(currentElement.toString().trim());
                     currentElement.setLength(0);
@@ -310,7 +310,7 @@ public class CommandParser {
                     commandsParts.add(result);
                     result = new ArrayList<>();
                 }
-            } else if (inQuotes || c != ' ') {
+            } else if (!inQuotes.isEmpty() || c != ' ') {
                 currentElement.append(c);
             }
         }
@@ -330,7 +330,15 @@ public class CommandParser {
     }
 
     private boolean takeCareOfQuote(char q, boolean want) {
-        return parserConfig.quote() != ParserConfig.NO_QUOTE && (want == (parserConfig.quote() == q));
+        return parserConfig.quotes() != ParserConfig.NO_QUOTE && (want == (parserConfig.quotes().contains(q)));
+    }
+
+    private void switchInQuotes(char q) {
+        if (!inQuotes.isEmpty() && inQuotes.peek() == q) {
+            inQuotes.pop();
+        } else {
+            inQuotes.push(q);
+        }
     }
 
     private boolean takeCareOfEOS(char q, boolean want) {
