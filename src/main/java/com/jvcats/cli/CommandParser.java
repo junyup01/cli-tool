@@ -1,9 +1,6 @@
 package com.jvcats.cli;
 
-import com.jvcats.cli.cmd.MainCommand;
-import com.jvcats.cli.cmd.MainCommandAdapter;
-import com.jvcats.cli.cmd.Option;
-import com.jvcats.cli.cmd.OptionAdapter;
+import com.jvcats.cli.cmd.*;
 import com.jvcats.cli.config.DefaultCommandConfig;
 import com.jvcats.cli.config.DefaultParserConfig;
 
@@ -234,10 +231,11 @@ public class CommandParser {
 
     private void parseArgs() throws Exception {
         for (List<String> commandParts : new ArrayList<>(commandsParts)) {
-            Map<Option, List<String>> args = new LinkedHashMap<>();
-            String key = null;
             String main = commandParts.getFirst();
             OptionAdapter optionMap = mainCommands.get(main).getOptions();
+            Command command = new BaseCommand(main);
+            String key;
+            List<String> tempArgs = new ArrayList<>();
             for (int i = 1; i < commandParts.size(); i++) {
                 String p = commandParts.get(i);
                 if (isExplicitFullOption(p)) {
@@ -246,7 +244,8 @@ public class CommandParser {
                         parserConfig.handleIllegalOption(key);
                         return;
                     }
-                    args.put(optionMap.get(key), new ArrayList<>());
+                    tempArgs = new ArrayList<>();
+                    command.addOption(key, tempArgs, optionMap);
                 } else if (isExplicitOption(p)) {
                     String keys = p.substring(1);
                     for (int j = 0; j < keys.length(); j++) {
@@ -255,16 +254,14 @@ public class CommandParser {
                             parserConfig.handleIllegalOption(key);
                             return;
                         }
-                        args.put(optionMap.get(key), new ArrayList<>());
+                        tempArgs = new ArrayList<>();
+                        command.addOption(key, tempArgs, optionMap);
                     }
                 } else if (!p.isBlank()) {
-                    args.get(optionMap.get(key)).add(p);
+                    tempArgs.add(p);
                 }
             }
-            List<Option> sortedKeys = sortOptions(args);
-            for (Option k : sortedKeys) {
-                k.getTask().run(args.get(k));
-            }
+            command.execute();
             commandsParts.remove(commandParts);
         }
 
@@ -354,16 +351,6 @@ public class CommandParser {
         Option option = new Option(optionOrder);
         option.setTask(task);
         return option;
-    }
-
-    private List<Option> sortOptions(Map<Option, List<String>> options) {
-        List<Option> result = new ArrayList<>(options.keySet());
-        result.sort((o1, o2) -> {
-            int p1 = o1.getPriority();
-            int p2 = o2.getPriority();
-            return Integer.compare(p2, p1);
-        });
-        return result;
     }
 
     private boolean isExplicitOption(String s) {
