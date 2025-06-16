@@ -10,10 +10,10 @@ public record RunningOption(Option option, List<String> args, int priority) impl
     @Override
     public int compareTo(RunningOption o) {
         Option option2 = o.option();
-        if (option.getPriority() == option2.getPriority()) {
+        if (option.priority() == option2.priority()) {
             return priority - o.priority();
         }
-        return option2.getPriority() - option.getPriority();
+        return option2.priority() - option.priority();
     }
 
 }

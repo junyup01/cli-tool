@@ -102,20 +102,17 @@ public class CommandParser {
             throw new IllegalArgumentException("No need to set command configuration for existing main command: " + main);
         }
         CommandConfig config = mainCommands.get(main).getConfig();
-        if (option == null || option.isBlank()) {
-            option = config.mainOptionName();
-        } else if (option.equals(config.mainOptionName())) {
-            throw new IllegalArgumentException("Invalid option name: " + config.mainOptionName());
-        }
         if (task == null) {
             task = (args) -> {
             };
         }
-        if (config.registerWithPriority()) {
-            mainCommands.get(main).getOptions().put(option, createOption(task, mainCommands.get(main).decrementPriorityIndex(), main, option));
-        } else {
-            mainCommands.get(main).getOptions().put(option, createOption(task, main, option));
+        if (option == null || option.isBlank()) {
+            mainCommands.get(main).getOptions().put(config.mainOptionName(), new Option(CommandConfig.MAIN_OPTION_PRIORITY, task));
+            return;
+        } else if (option.equals(config.mainOptionName())) {
+            throw new IllegalArgumentException("Invalid option name: " + option);
         }
+        mainCommands.get(main).getOptions().put(option, new Option(mainCommands.get(main).decrementPriorityIndex(), task));
     }
 
     /**
@@ -154,20 +151,15 @@ public class CommandParser {
             };
         }
         if (options == null || options.length == 0) {
-            mainCommands.get(main).getOptions().put(config.mainOptionName(), createOption(task, main, config.mainOptionName()));
+            mainCommands.get(main).getOptions().put(config.mainOptionName(), new Option(CommandConfig.MAIN_OPTION_PRIORITY, task));
             return;
         }
-        for (String option : options) {
-            if (option == null || option.isBlank()) {
-                option = config.mainOptionName();
-            } else if (option.equals(config.mainOptionName())) {
-                throw new IllegalArgumentException("Invalid option name: " + config.mainOptionName());
+        Option option = new Option(mainCommands.get(main).decrementPriorityIndex(), task);
+        for (String o : options) {
+            if (o == null || o.isBlank() || o.equals(config.mainOptionName())) {
+                throw new IllegalArgumentException("Invalid option name: " + o);
             }
-            if (config.registerWithPriority()) {
-                mainCommands.get(main).getOptions().put(option, createOption(task, mainCommands.get(main).decrementPriorityIndex(), main, option));
-            } else {
-                mainCommands.get(main).getOptions().put(option, createOption(task, main, option));
-            }
+            mainCommands.get(main).getOptions().put(o, option);
         }
     }
 
@@ -340,17 +332,6 @@ public class CommandParser {
 
     private boolean takeCareOfEOS(char q, boolean want) {
         return parserConfig.endOfStatement() != ParserConfig.NO_EOS && (want == (parserConfig.endOfStatement() == q));
-    }
-
-    private Option createOption(CommandTask task, String main, String optionName) {
-        return createOption(task, mainCommands.get(main).getConfig().runningPolicy(), main, optionName);
-    }
-
-    private Option createOption(CommandTask task, int priority, String main, String optionName) {
-        int optionOrder = optionName.equals(mainCommands.get(main).getConfig().mainOptionName()) ? CommandConfig.MAIN_OPTION_PRIORITY : priority;
-        Option option = new Option(optionOrder);
-        option.setTask(task);
-        return option;
     }
 
     private boolean isExplicitOption(String s) {

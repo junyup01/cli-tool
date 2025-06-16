@@ -22,7 +22,7 @@ public class BaseCommand implements Command {
     @Override
     public void addOption(String option, List<String> args, OptionAdapter optionAdapter) {
         Option optionObj = optionAdapter.get(option);
-        int priority = optionObj.getPriority();
+        int priority = optionObj.priority();
         if (priorityMap.containsKey(priority)) {
             priorityMap.put(priority, priorityMap.get(priority) + 1);
         } else {
@@ -40,7 +40,7 @@ public class BaseCommand implements Command {
     public void execute() throws Exception {
         while (!options.isEmpty()) {
             RunningOption option = options.poll();
-            option.option().getTask().run(option.args());
+            option.option().task().run(option.args());
         }
     }
 }

@@ -35,7 +35,7 @@ public class MainCommand {
     }
 
     public int decrementPriorityIndex() {
-        if (!freezePriorityCount) {
+        if (config.registerWithPriority() && !freezePriorityCount) {
             priorityIndex--;
         }
         return priorityIndex;
