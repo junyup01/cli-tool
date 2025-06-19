@@ -212,6 +212,9 @@ public class CommandParser {
             String main = commandsParts.get(i).getFirst();
             if (!mainCommands.containsKey(main)) {
                 parserConfig.handleIllegalCommand(commandsParts.get(i).getFirst());
+                // the rest of commands will be cleared
+                commandsParts.clear();
+                remaining.clear();
                 return;
             }
             if (commandsParts.get(i).size() == 1 || !isExplicitOption(commandsParts.get(i).get(1))) {
@@ -234,6 +237,9 @@ public class CommandParser {
                     key = p.substring(p.lastIndexOf(ParserConfig.OPTION_PREFIX) + 1);
                     if (!optionMap.containsKey(key)) {
                         parserConfig.handleIllegalOption(key);
+                        // the rest of commands will be cleared
+                        commandsParts.clear();
+                        remaining.clear();
                         return;
                     }
                     tempArgs = new ArrayList<>();
@@ -244,6 +250,8 @@ public class CommandParser {
                         key = keys.substring(j, j + 1);
                         if (!optionMap.containsKey(key)) {
                             parserConfig.handleIllegalOption(key);
+                            commandsParts.clear();
+                            remaining.clear();
                             return;
                         }
                         tempArgs = new ArrayList<>();
