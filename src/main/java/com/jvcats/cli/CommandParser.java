@@ -207,7 +207,7 @@ public class CommandParser {
             commandsParts.add(new ArrayList<>(remaining));
             remaining.clear();
         }
-        parseArgLine(line.trim());
+        parseArgLine(line);
         for (int i = 0; i < commandsParts.size(); i++) {
             String main = commandsParts.get(i).getFirst();
             if (!mainCommands.containsKey(main)) {
@@ -272,7 +272,11 @@ public class CommandParser {
             return;
         }
         List<String> result = commandsParts.isEmpty() ? new ArrayList<>() : commandsParts.removeFirst();
-        StringBuilder currentElement = new StringBuilder();
+
+        // allow a command to be split into multiple lines if EOS is specified
+        // need to add a delimiter to the beginning of next line if handling a new token
+        // or the new token will be combined with previous one
+        StringBuilder currentElement = result.isEmpty() ? new StringBuilder() : new StringBuilder(result.removeLast());
 
         for (int i = 0; i < args.length(); i++) {
             char c = args.charAt(i);
