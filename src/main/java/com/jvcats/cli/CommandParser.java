@@ -230,7 +230,7 @@ public class CommandParser {
             OptionAdapter optionMap = mainCommands.get(main).getOptions();
             Command command = new BaseCommand(main);
             String key;
-            List<String> tempArgs = new ArrayList<>();
+            List<Argument> tempArgs = new ArrayList<>();
             for (int i = 1; i < commandParts.size(); i++) {
                 String p = commandParts.get(i);
                 if (isExplicitFullOption(p)) {
@@ -258,7 +258,7 @@ public class CommandParser {
                         command.addOption(key, tempArgs, optionMap);
                     }
                 } else if (!p.isBlank()) {
-                    tempArgs.add(p);
+                    tempArgs.add(new Argument(parserConfig, p));
                 }
             }
             command.execute();
@@ -331,7 +331,7 @@ public class CommandParser {
     }
 
     private boolean takeCareOfQuote(char q, boolean want) {
-        return parserConfig.quotes() != ParserConfig.NO_QUOTE && (want == (parserConfig.quotes().contains(q)));
+        return !parserConfig.quotes().isEmpty() && (want == (parserConfig.quotes().contains(q)));
     }
 
     private void switchInQuotes(char q) {

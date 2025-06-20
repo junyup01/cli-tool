@@ -20,7 +20,7 @@ public class BaseCommand implements Command {
     }
 
     @Override
-    public void addOption(String option, List<String> args, OptionAdapter optionAdapter) {
+    public void addOption(String option, List<Argument> args, OptionAdapter optionAdapter) {
         Option optionObj = optionAdapter.get(option);
         int priority = optionObj.priority();
         if (priorityMap.containsKey(priority)) {

@@ -12,7 +12,7 @@ public interface Command {
 
     PriorityQueue<RunningOption> getOptions();
 
-    void addOption(String option, List<String> args, OptionAdapter optionAdapter);
+    void addOption(String option, List<Argument> args, OptionAdapter optionAdapter);
 
     void execute() throws Exception;
 }

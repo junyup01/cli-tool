@@ -5,7 +5,7 @@ import java.util.List;
 /**
  * This class represents a running option with its arguments and priority.
  */
-public record RunningOption(Option option, List<String> args, int priority) implements Comparable<RunningOption> {
+public record RunningOption(Option option, List<Argument> args, int priority) implements Comparable<RunningOption> {
 
     @Override
     public int compareTo(RunningOption o) {
