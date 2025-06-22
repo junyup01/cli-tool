@@ -1,7 +1,6 @@
 package com.jvcats.cli.cmd;
 
 import java.util.List;
-import java.util.PriorityQueue;
 
 /**
  * This interface represents a command that can be executed.
@@ -10,9 +9,15 @@ public interface Command {
 
     String getName();
 
-    PriorityQueue<RunningOption> getOptions();
+    void setName(String name);
 
-    void addOption(String option, List<Argument> args, OptionAdapter optionAdapter);
+    List<RunningOption> getOptions();
+
+    RunningOption getOption(String option);
+
+    void addOption(String option);
+
+    void removeOption(String option);
 
     void execute() throws Exception;
 }

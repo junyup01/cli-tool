@@ -34,6 +34,7 @@ public class CommandParser {
 
     /**
      * Reviews if the command line was complete.
+     *
      * @return True if the command line was complete, false otherwise.
      */
     public boolean isCommandComplete() {
@@ -224,13 +225,23 @@ public class CommandParser {
         parseArgs();
     }
 
+    /**
+     * Creates a new command with the given main command name.
+     * The main command name must be registered before calling this method.
+     *
+     * @param main The main command name.
+     * @return A new command with the given main command name.
+     */
+    public Command createCommand(String main) {
+        return new BaseCommand(main, mainCommands, parserConfig);
+    }
+
     private void parseArgs() throws Exception {
         for (List<String> commandParts : new ArrayList<>(commandsParts)) {
             String main = commandParts.getFirst();
             OptionAdapter optionMap = mainCommands.get(main).getOptions();
-            Command command = new BaseCommand(main);
-            String key;
-            List<Argument> tempArgs = new ArrayList<>();
+            Command command = new BaseCommand(main, mainCommands, parserConfig);
+            String key = null;
             for (int i = 1; i < commandParts.size(); i++) {
                 String p = commandParts.get(i);
                 if (isExplicitFullOption(p)) {
@@ -242,8 +253,7 @@ public class CommandParser {
                         remaining.clear();
                         return;
                     }
-                    tempArgs = new ArrayList<>();
-                    command.addOption(key, tempArgs, optionMap);
+                    command.addOption(key);
                 } else if (isExplicitOption(p)) {
                     String keys = p.substring(1);
                     for (int j = 0; j < keys.length(); j++) {
@@ -254,17 +264,15 @@ public class CommandParser {
                             remaining.clear();
                             return;
                         }
-                        tempArgs = new ArrayList<>();
-                        command.addOption(key, tempArgs, optionMap);
+                        command.addOption(key);
                     }
                 } else if (!p.isBlank()) {
-                    tempArgs.add(new Argument(parserConfig, p));
+                    command.getOption(key).addArgument(p);
                 }
             }
             command.execute();
             commandsParts.remove(commandParts);
         }
-
     }
 
     private void parseArgLine(String args) {
