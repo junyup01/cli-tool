@@ -1,11 +1,15 @@
 package com.jvcats.cli.cmd;
 
+import com.jvcats.cli.tree.Node;
+
 import java.util.List;
 
 /**
  * This interface represents a command that can be executed.
  */
-public interface Command {
+public interface Command extends Node {
+
+    String NOP_COMMAND = "__NOP__";
 
     String getName();
 

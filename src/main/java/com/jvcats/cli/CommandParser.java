@@ -3,6 +3,7 @@ package com.jvcats.cli;
 import com.jvcats.cli.cmd.*;
 import com.jvcats.cli.config.DefaultCommandConfig;
 import com.jvcats.cli.config.DefaultParserConfig;
+import com.jvcats.cli.tree.CommandTree;
 
 import java.util.*;
 
@@ -15,6 +16,7 @@ public class CommandParser {
     private final List<String> remaining = new ArrayList<>();
     private final List<List<String>> commandsParts = new ArrayList<>();
     private final Deque<Character> inQuotes = new ArrayDeque<>();
+    private final CommandTree commandTree = new CommandTree();
 
     /**
      * Creates a new command parser with the given parser configuration.
@@ -23,6 +25,9 @@ public class CommandParser {
      */
     public CommandParser(ParserConfig parserConfig) {
         this.parserConfig = parserConfig;
+        if (!usingBlockStructure()) {
+            registerNoOperationCommand();
+        }
     }
 
     /**
@@ -30,6 +35,15 @@ public class CommandParser {
      */
     public CommandParser() {
         this.parserConfig = new DefaultParserConfig();
+        registerNoOperationCommand();
+    }
+
+    /**
+     * Returns the command tree.
+     * @return The command tree.
+     */
+    public CommandTree getCommandTree() {
+        return commandTree;
     }
 
     /**
@@ -195,12 +209,13 @@ public class CommandParser {
     }
 
     /**
-     * Runs the command with the given line.
+     * Prepares the command line for execution.
+     * One can intercept the commands after calling this method to modify the command tree before execution.
      *
      * @param line The command line.
-     * @throws Exception If an error occurs while running the command.
+     * @throws Exception If an error occurs while preparing the command line.
      */
-    public void runCommand(String line) throws Exception {
+    public void prepare(String line) throws Exception {
         if (line == null || line.isBlank()) {
             return;
         }
@@ -211,6 +226,9 @@ public class CommandParser {
         parseArgLine(line);
         for (int i = 0; i < commandsParts.size(); i++) {
             String main = commandsParts.get(i).getFirst();
+            if (isBlockStart(main) || isBlockEnd(main)) {
+                continue;
+            }
             if (!mainCommands.containsKey(main)) {
                 parserConfig.handleIllegalCommand(commandsParts.get(i).getFirst());
                 // the rest of commands will be cleared
@@ -226,6 +244,27 @@ public class CommandParser {
     }
 
     /**
+     * Executes the prepared commands.
+     *
+     * @throws Exception If an error occurs while executing the commands.
+     */
+    public void execute() throws Exception {
+        commandTree.execute(commandTree.peek());
+        commandTree.clear();
+    }
+
+    /**
+     * Runs the command with the given line.
+     *
+     * @param line The command line.
+     * @throws Exception If an error occurs while running the command.
+     */
+    public void runCommand(String line) throws Exception {
+        prepare(line);
+        execute();
+    }
+
+    /**
      * Creates a new command with the given main command name.
      * The main command name must be registered before calling this method.
      *
@@ -237,10 +276,23 @@ public class CommandParser {
     }
 
     private void parseArgs() throws Exception {
+        if (!usingBlockStructure()) {
+            commandTree.add(null, new BaseCommand(Command.NOP_COMMAND, mainCommands, parserConfig));
+        }
+        Command parent = commandTree.peek();
+        Command command = parent;
         for (List<String> commandParts : new ArrayList<>(commandsParts)) {
             String main = commandParts.getFirst();
+            if (isBlockStart(main)) {
+                parent = command;
+                continue;
+            } else if (isBlockEnd(main)) {
+                parent = (Command) parent.getParent();
+                continue;
+            }
             OptionAdapter optionMap = mainCommands.get(main).getOptions();
-            Command command = new BaseCommand(main, mainCommands, parserConfig);
+            command = new BaseCommand(main, mainCommands, parserConfig);
+            commandTree.add(parent, command);
             String key = null;
             for (int i = 1; i < commandParts.size(); i++) {
                 String p = commandParts.get(i);
@@ -270,7 +322,6 @@ public class CommandParser {
                     command.getOption(key).addArgument(p);
                 }
             }
-            command.execute();
             commandsParts.remove(commandParts);
         }
     }
@@ -289,6 +340,11 @@ public class CommandParser {
         for (int i = 0; i < args.length(); i++) {
             char c = args.charAt(i);
 
+            if (c == '\n' || c == '\r') {
+                // ignore new line characters
+                continue;
+            }
+
             if (takeCareOfQuote(c, true)) {
                 switchInQuotes(c);
                 currentElement.append(c);
@@ -296,6 +352,24 @@ public class CommandParser {
                     result.add(currentElement.toString().trim());
                     currentElement.setLength(0);
                 }
+                continue;
+            }
+
+            if (isBlockStart(c) && inQuotes.isEmpty()) {
+                if (!currentElement.isEmpty()) {
+                    result.add(currentElement.toString().trim());
+                    currentElement.setLength(0);
+                }
+                if (!result.isEmpty()) {
+                    commandsParts.add(result);
+                    result = new ArrayList<>();
+                }
+                commandsParts.add(List.of(String.valueOf(c)));
+                continue;
+            }
+
+            if (isBlockEnd(c) && inQuotes.isEmpty()) {
+                commandsParts.add(List.of(String.valueOf(c)));
                 continue;
             }
 
@@ -360,6 +434,31 @@ public class CommandParser {
 
     private boolean isExplicitFullOption(String s) {
         return s.startsWith(ParserConfig.FULL_OPTION_PREFIX);
+    }
+
+    private boolean isBlockStart(String s) {
+        return usingBlockStructure() && s.length() == 1 && parserConfig.blockChars()[0] == s.charAt(0);
+    }
+
+    private boolean isBlockEnd(String s) {
+        return usingBlockStructure() && s.length() == 1 && parserConfig.blockChars()[1] == s.charAt(0);
+    }
+
+    private boolean isBlockStart(char c) {
+        return usingBlockStructure() && parserConfig.blockChars()[0] == c;
+    }
+
+    private boolean isBlockEnd(char c) {
+        return usingBlockStructure() && parserConfig.blockChars()[1] == c;
+    }
+
+    private boolean usingBlockStructure() {
+        return parserConfig.blockChars().length == 2;
+    }
+
+    private void registerNoOperationCommand() {
+        register(Command.NOP_COMMAND, (args) -> {
+        });
     }
 
 }

@@ -17,6 +17,8 @@ public interface ParserConfig {
 
     char ESCAPE = '\\';
 
+    char[] NO_BLOCK_CHARS = {};
+
     String OPTION_PREFIX = "-";
 
     String FULL_OPTION_PREFIX = "--";
@@ -81,5 +83,15 @@ public interface ParserConfig {
      */
     default void handleIllegalOption(String part) throws Exception {
         System.out.println("Unknown option: " + part);
+    }
+
+    /**
+     * Sets the block characters for the command tree.
+     * The array contains two characters, which are used to define a block of commands.
+     *
+     * @return the block characters.
+     */
+    default char[] blockChars() {
+        return NO_BLOCK_CHARS;
     }
 }

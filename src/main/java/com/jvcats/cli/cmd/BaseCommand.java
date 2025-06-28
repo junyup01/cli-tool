@@ -1,14 +1,14 @@
 package com.jvcats.cli.cmd;
 
 import com.jvcats.cli.ParserConfig;
+import com.jvcats.cli.tree.AbstractCommand;
 
 import java.util.*;
 
 /**
  * Base class for running commands.
  */
-public class BaseCommand implements Command {
-    private String name;
+public class BaseCommand extends AbstractCommand {
     private final List<RunningOption> options = new ArrayList<>();
     private final Map<Integer, Integer> priorityMap = new HashMap<>();
     private final ParserConfig parserConfig;
@@ -24,11 +24,6 @@ public class BaseCommand implements Command {
         this.name = name;
         this.parserConfig = parserConfig;
         this.mainCommandAdapter = mainCommandAdapter;
-    }
-
-    @Override
-    public String getName() {
-        return name;
     }
 
     @Override
