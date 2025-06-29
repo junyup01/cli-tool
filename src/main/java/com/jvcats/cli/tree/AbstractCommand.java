@@ -9,31 +9,69 @@ import java.util.*;
  */
 public abstract class AbstractCommand implements Command {
     protected String name;
+    protected Map<String, List<String>> options;
     protected List<Node> children = new ArrayList<>();
     protected Node parent;
 
+    public AbstractCommand(String name, Map<String, List<String>> options) {
+        this.name = name;
+        this.options = options;
+    }
+
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public void setName(String name) {
         this.name = name;
     }
 
     @Override
-    public abstract List<RunningOption> getOptions();
+    public List<String> getOptions() {
+        return new ArrayList<>(options.keySet());
+    }
 
     @Override
-    public abstract RunningOption getOption(String option);
+    public void addOption(String option) {
+        options.put(option, new ArrayList<>());
+    }
 
     @Override
-    public abstract void addOption(String option);
+    public void removeOption(String option) {
+        options.remove(option);
+    }
 
     @Override
-    public abstract void removeOption(String option);
+    public void clearOptions() {
+        options.clear();
+    }
 
     @Override
-    public abstract void execute() throws Exception;
+    public List<String> getArguments(String option) {
+        return options.get(option);
+    }
+
+    @Override
+    public void addArguments(String option, String... args) {
+        options.get(option).addAll(List.of(args));
+    }
+
+    @Override
+    public void removeArguments(String option, String... args) {
+        options.get(option).removeAll(List.of(args));
+    }
+
+    @Override
+    public void clearArguments(String option) {
+        options.get(option).clear();
+    }
+
+    @Override
+    public void execute() throws Exception {
+        throw new UnsupportedOperationException("Not implemented");
+    }
 
     @Override
     public void addChild(Node node) {

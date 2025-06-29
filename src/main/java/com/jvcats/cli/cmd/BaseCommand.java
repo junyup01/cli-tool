@@ -1,29 +1,41 @@
 package com.jvcats.cli.cmd;
 
 import com.jvcats.cli.ParserConfig;
-import com.jvcats.cli.tree.AbstractCommand;
+import com.jvcats.cli.tree.Node;
 
 import java.util.*;
 
 /**
  * Base class for running commands.
  */
-public class BaseCommand extends AbstractCommand {
+public class BaseCommand implements Command {
+    private String name;
     private final List<RunningOption> options = new ArrayList<>();
     private final Map<Integer, Integer> priorityMap = new HashMap<>();
     private final ParserConfig parserConfig;
     private final MainCommandAdapter mainCommandAdapter;
+    private List<Node> children = new ArrayList<>();
+    private Node parent;
 
     /**
      * Using this constructor is discouraged, one should call createCommand() from CommandParser instead
      */
-    public BaseCommand(String name, MainCommandAdapter mainCommandAdapter, ParserConfig parserConfig) {
+    public BaseCommand(String name, Map<String, List<String>> options, MainCommandAdapter mainCommandAdapter, ParserConfig parserConfig) {
         if (!mainCommandAdapter.containsKey(name)) {
             throw new IllegalArgumentException("Undefined command name: " + name);
         }
         this.name = name;
         this.parserConfig = parserConfig;
         this.mainCommandAdapter = mainCommandAdapter;
+        for (Map.Entry<String, List<String>> entry : options.entrySet()) {
+            addOption(entry.getKey());
+            addArguments(entry.getKey(), entry.getValue().toArray(new String[0]));
+        }
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
     @Override
@@ -59,13 +71,7 @@ public class BaseCommand extends AbstractCommand {
         options.add(new RunningOption(option, priorityMap.get(priority), parserConfig, mainCommand.getConfig(), optionAdapter));
     }
 
-    @Override
-    public List<RunningOption> getOptions() {
-        return options;
-    }
-
-    @Override
-    public RunningOption getOption(String option) {
+    private RunningOption getOption(String option) {
         if (option == null) {
             option = mainCommandAdapter.get(name).getConfig().mainOptionName();
         }
@@ -74,12 +80,49 @@ public class BaseCommand extends AbstractCommand {
                 return opt;
             }
         }
-        return null;
+        throw new IllegalArgumentException("Undefined option name: " + option);
     }
 
     @Override
     public void removeOption(String option) {
         options.remove(getOption(option));
+    }
+
+    @Override
+    public void clearOptions() {
+        options.clear();
+    }
+
+    @Override
+    public List<String> getOptions() {
+        List<String> result = new ArrayList<>();
+        for (RunningOption option : options) {
+            result.add(option.getName());
+        }
+        return result;
+    }
+
+    @Override
+    public List<String> getArguments(String option) {
+        return getOption(option).getArgs().stream().map(Argument::getContent).toList();
+    }
+
+    @Override
+    public void addArguments(String option, String... args) {
+        getOption(option).addArgument(args);
+    }
+
+    @Override
+    public void removeArguments(String option, String... args) {
+        List<Argument> arguments = getOption(option).getArgs();
+        for (String arg : args) {
+            arguments.removeIf(a -> a.getContent().equals(arg));
+        }
+    }
+
+    @Override
+    public void clearArguments(String option) {
+        getOption(option).getArgs().clear();
     }
 
     @Override
@@ -102,5 +145,42 @@ public class BaseCommand extends AbstractCommand {
     @Override
     public String toString() {
         return name + options;
+    }
+
+    @Override
+    public void addChild(Node node) {
+        node.setParent(this);
+        children.add(node);
+    }
+
+    @Override
+    public List<Node> removeAllChildren() {
+        List<Node> children = this.children;
+        this.children = new ArrayList<>();
+        for (Node child : children) {
+            child.setParent(null);
+        }
+        return children;
+    }
+
+    @Override
+    public void removeChild(Node node) {
+        children.remove(node);
+        node.setParent(null);
+    }
+
+    @Override
+    public List<Node> getChildren() {
+        return children;
+    }
+
+    @Override
+    public void setParent(Node node) {
+        this.parent = node;
+    }
+
+    @Override
+    public Node getParent() {
+        return parent;
     }
 }

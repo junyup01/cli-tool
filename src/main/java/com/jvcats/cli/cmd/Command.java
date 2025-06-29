@@ -15,13 +15,21 @@ public interface Command extends Node {
 
     void setName(String name);
 
-    List<RunningOption> getOptions();
-
-    RunningOption getOption(String option);
+    List<String> getOptions();
 
     void addOption(String option);
 
     void removeOption(String option);
+
+    void clearOptions();
+
+    List<String> getArguments(String option);
+
+    void addArguments(String option, String... args);
+
+    void removeArguments(String option, String... args);
+
+    void clearArguments(String option);
 
     void execute() throws Exception;
 }

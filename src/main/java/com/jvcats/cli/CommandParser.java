@@ -3,6 +3,8 @@ package com.jvcats.cli;
 import com.jvcats.cli.cmd.*;
 import com.jvcats.cli.config.DefaultCommandConfig;
 import com.jvcats.cli.config.DefaultParserConfig;
+import com.jvcats.cli.tree.BaseCommandFactory;
+import com.jvcats.cli.tree.CommandFactory;
 import com.jvcats.cli.tree.CommandTree;
 
 import java.util.*;
@@ -17,6 +19,7 @@ public class CommandParser {
     private final List<List<String>> commandsParts = new ArrayList<>();
     private final Deque<Character> inQuotes = new ArrayDeque<>();
     private final CommandTree commandTree = new CommandTree();
+    private final CommandFactory commandFactory;
 
     /**
      * Creates a new command parser with the given parser configuration.
@@ -24,18 +27,28 @@ public class CommandParser {
      * @param parserConfig The parser configuration, this will be used for all commands registered with this parser.
      */
     public CommandParser(ParserConfig parserConfig) {
-        this.parserConfig = parserConfig;
-        if (!usingBlockStructure()) {
-            registerNoOperationCommand();
-        }
+        this(parserConfig, new BaseCommandFactory());
     }
 
     /**
      * Creates a new command parser with the default parser configuration.
      */
     public CommandParser() {
-        this.parserConfig = new DefaultParserConfig();
-        registerNoOperationCommand();
+        this(new DefaultParserConfig(), new BaseCommandFactory());
+    }
+
+    /**
+     * Creates a new command parser with the given parser configuration and command factory.
+     *
+     * @param parserConfig The parser configuration, this will be used for all commands registered with this parser.
+     * @param commandFactory The command factory with logic for creating commands.
+     */
+    public CommandParser(ParserConfig parserConfig, CommandFactory commandFactory) {
+        this.parserConfig = parserConfig;
+        if (!usingBlockStructure()) {
+            registerNoOperationCommand();
+        }
+        this.commandFactory = commandFactory;
     }
 
     /**
@@ -265,19 +278,18 @@ public class CommandParser {
     }
 
     /**
-     * Creates a new command with the given main command name.
-     * The main command name must be registered before calling this method.
+     * Creates a new command with the given main command name from the command factory.
      *
      * @param main The main command name.
      * @return A new command with the given main command name.
      */
     public Command createCommand(String main) {
-        return new BaseCommand(main, mainCommands, parserConfig);
+        return commandFactory.createCommand(main, mainCommands, parserConfig);
     }
 
     private void parseArgs() throws Exception {
         if (!usingBlockStructure()) {
-            commandTree.add(null, new BaseCommand(Command.NOP_COMMAND, mainCommands, parserConfig));
+            commandTree.add(null, commandFactory.createCommand(Command.NOP_COMMAND, mainCommands, parserConfig));
         }
         Command parent = commandTree.peek();
         Command command = parent;
@@ -290,9 +302,8 @@ public class CommandParser {
                 parent = (Command) parent.getParent();
                 continue;
             }
+            LinkedHashMap<String, List<String>> options = new LinkedHashMap<>();
             OptionAdapter optionMap = mainCommands.get(main).getOptions();
-            command = new BaseCommand(main, mainCommands, parserConfig);
-            commandTree.add(parent, command);
             String key = null;
             for (int i = 1; i < commandParts.size(); i++) {
                 String p = commandParts.get(i);
@@ -305,7 +316,7 @@ public class CommandParser {
                         remaining.clear();
                         return;
                     }
-                    command.addOption(key);
+                    options.put(key, new ArrayList<>());
                 } else if (isExplicitOption(p)) {
                     String keys = p.substring(1);
                     for (int j = 0; j < keys.length(); j++) {
@@ -316,12 +327,14 @@ public class CommandParser {
                             remaining.clear();
                             return;
                         }
-                        command.addOption(key);
+                        options.put(key, new ArrayList<>());
                     }
                 } else if (!p.isBlank()) {
-                    command.getOption(key).addArgument(p);
+                    options.get(key).add(p);
                 }
             }
+            command = commandFactory.createCommand(main, options, mainCommands, parserConfig);
+            commandTree.add(parent, command);
             commandsParts.remove(commandParts);
         }
     }
