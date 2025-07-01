@@ -140,6 +140,10 @@ public class BaseCommand implements Command {
         for (RunningOption option : temp) {
             optionAdapter.get(option.getName()).task().run(option.getArgs());
         }
+
+        for (Node child : children) {
+            ((Command) child).execute();
+        }
     }
 
     @Override

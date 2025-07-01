@@ -79,19 +79,16 @@ public class CommandTree {
     }
 
     /**
-     * Executes the given command and all its descendants in pre-order traversal.
+     * Executes the given command.
      *
-     * @param command the command to start from
-     * @throws Exception if any command fails to execute
+     * @param command the command to execute
+     * @throws Exception if the command fails to execute
      */
     public void execute(Command command) throws Exception {
         if (command == null) {
             return;
         }
         command.execute();
-        for (Node child : command.getChildren()) {
-            execute((Command) child);
-        }
     }
 
     /**
