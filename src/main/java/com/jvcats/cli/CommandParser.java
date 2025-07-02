@@ -287,6 +287,57 @@ public class CommandParser {
         return commandFactory.createCommand(main, mainCommands, parserConfig);
     }
 
+    /**
+     * Checks by what character the given string is quoted.
+     * One should override quotes() method to return a non-empty list to enable quoting.
+     *
+     * @param content The string to check.
+     * @return The character or 0 if not quoted.
+     */
+    public char quotedBy(String content) {
+        if (parserConfig.quotes().isEmpty()) {
+            return 0;
+        }
+        if (content == null || content.length() < 2) {
+            return 0;
+        }
+        char q = 0;
+        for (char c : parserConfig.quotes()) {
+            if (content.charAt(0) == c) {
+                q = c;
+                break;
+            }
+        }
+        // it should always be true if content is an argument in a command
+        if (content.charAt(content.length() - 1) == q) {
+            return q;
+        }
+        return 0;
+    }
+
+    /**
+     * Checks if the given string is a quoted string.
+     *
+     * @param content The string to check.
+     * @return True if the string is a quoted string, false otherwise.
+     */
+    public boolean isQuoted(String content) {
+        return quotedBy(content) != 0;
+    }
+
+    /**
+     * Trims the quotes from the given string if it is quoted.
+     *
+     * @param content The string to trim.
+     * @return The trimmed string.
+     */
+    public String trimQuotes(String content) {
+        if (isQuoted(content)) {
+            return content.substring(1, content.length() - 1);
+        }
+        return content;
+    }
+
     private void parseArgs() throws Exception {
         if (!usingBlockStructure()) {
             commandTree.add(null, commandFactory.createCommand(Command.NOP_COMMAND, mainCommands, parserConfig));

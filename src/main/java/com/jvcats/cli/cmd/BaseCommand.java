@@ -1,6 +1,5 @@
 package com.jvcats.cli.cmd;
 
-import com.jvcats.cli.ParserConfig;
 import com.jvcats.cli.tree.Node;
 
 import java.util.*;
@@ -12,7 +11,6 @@ public class BaseCommand implements Command {
     private String name;
     private final List<RunningOption> options = new ArrayList<>();
     private final Map<Integer, Integer> priorityMap = new HashMap<>();
-    private final ParserConfig parserConfig;
     private final MainCommandAdapter mainCommandAdapter;
     private List<Node> children = new ArrayList<>();
     private Node parent;
@@ -20,12 +18,11 @@ public class BaseCommand implements Command {
     /**
      * Using this constructor is discouraged, one should call createCommand() from CommandParser instead
      */
-    public BaseCommand(String name, Map<String, List<String>> options, MainCommandAdapter mainCommandAdapter, ParserConfig parserConfig) {
+    public BaseCommand(String name, Map<String, List<String>> options, MainCommandAdapter mainCommandAdapter) {
         if (!mainCommandAdapter.containsKey(name)) {
             throw new IllegalArgumentException("Undefined command name: " + name);
         }
         this.name = name;
-        this.parserConfig = parserConfig;
         this.mainCommandAdapter = mainCommandAdapter;
         for (Map.Entry<String, List<String>> entry : options.entrySet()) {
             addOption(entry.getKey());
@@ -68,7 +65,7 @@ public class BaseCommand implements Command {
         } else {
             priorityMap.put(priority, 1);
         }
-        options.add(new RunningOption(option, priorityMap.get(priority), parserConfig, mainCommand.getConfig(), optionAdapter));
+        options.add(new RunningOption(option, priorityMap.get(priority), mainCommand.getConfig(), optionAdapter));
     }
 
     private RunningOption getOption(String option) {
@@ -104,7 +101,7 @@ public class BaseCommand implements Command {
 
     @Override
     public List<String> getArguments(String option) {
-        return getOption(option).getArgs().stream().map(Argument::getContent).toList();
+        return getOption(option).getArgs();
     }
 
     @Override
@@ -114,10 +111,7 @@ public class BaseCommand implements Command {
 
     @Override
     public void removeArguments(String option, String... args) {
-        List<Argument> arguments = getOption(option).getArgs();
-        for (String arg : args) {
-            arguments.removeIf(a -> a.getContent().equals(arg));
-        }
+        getOption(option).getArgs().removeAll(List.of(args));
     }
 
     @Override

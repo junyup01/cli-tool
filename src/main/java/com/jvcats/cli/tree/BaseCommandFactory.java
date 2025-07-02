@@ -15,6 +15,6 @@ public class BaseCommandFactory implements CommandFactory {
 
     @Override
     public Command createCommand(String commandName, Map<String, List<String>> options, MainCommandAdapter mainCommandAdapter, ParserConfig parserConfig) {
-        return new BaseCommand(commandName, options, mainCommandAdapter, parserConfig);
+        return new BaseCommand(commandName, options, mainCommandAdapter);
     }
 }

@@ -1,7 +1,6 @@
 package com.jvcats.cli.cmd;
 
 import com.jvcats.cli.CommandConfig;
-import com.jvcats.cli.ParserConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,33 +10,27 @@ import java.util.List;
  */
 public class RunningOption {
     private String name;
-    private final List<Argument> args = new ArrayList<>();
+    private final List<String> args = new ArrayList<>();
     private final int priority;
-    private final ParserConfig parserConfig;
     private final CommandConfig commandConfig;
     private final OptionAdapter optionAdapter;
 
     /**
      * Using this constructor is discouraged, one should call addOption() from BaseCommand instead
      */
-    public RunningOption(String name, int priority, ParserConfig parserConfig, CommandConfig commandConfig, OptionAdapter optionAdapter) {
+    public RunningOption(String name, int priority, CommandConfig commandConfig, OptionAdapter optionAdapter) {
         // the logic for "null to main option name" is already implemented in addOption()
         if (!optionAdapter.containsKey(name)) {
             throw new IllegalArgumentException("Undefined option name: " + name);
         }
         this.name = name;
         this.priority = priority;
-        this.parserConfig = parserConfig;
         this.commandConfig = commandConfig;
         this.optionAdapter = optionAdapter;
     }
 
     public void addArgument(String... args) {
-        List<Argument> arguments = new ArrayList<>();
-        for (String s : args) {
-            arguments.add(new Argument(parserConfig, s));
-        }
-        this.args.addAll(arguments);
+        this.args.addAll(List.of(args));
     }
 
     public String getName() {
@@ -54,7 +47,7 @@ public class RunningOption {
         this.name = name;
     }
 
-    public List<Argument> getArgs() {
+    public List<String> getArgs() {
         return args;
     }
 
@@ -64,6 +57,6 @@ public class RunningOption {
 
     @Override
     public String toString() {
-        return name + "=" + String.join(" ", args.stream().map(Argument::getContent).toList());
+        return name + "=" + args;
     }
 }
