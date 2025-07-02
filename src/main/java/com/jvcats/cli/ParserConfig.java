@@ -1,7 +1,5 @@
 package com.jvcats.cli;
 
-import java.util.Collections;
-import java.util.List;
 
 /**
  * This interface defines the configuration of a parser.
@@ -9,7 +7,7 @@ import java.util.List;
  */
 public interface ParserConfig {
 
-    List<Character> NO_QUOTE = Collections.emptyList();
+    String NO_QUOTE = "";
 
     char DELIMITER = ' ';
 
@@ -17,7 +15,7 @@ public interface ParserConfig {
 
     char ESCAPE = '\\';
 
-    char[] NO_BLOCK_CHARS = {};
+    String NO_BLOCK_CHARS = "";
 
     String OPTION_PREFIX = "-";
 
@@ -26,11 +24,11 @@ public interface ParserConfig {
     /**
      * Sets the quote characters for the command.
      * The quote character is used to enclose the value of the option if it contains delimiters or spaces.
-     * The default quote characters is empty, which means no quote is used.
+     * The default quote characters is a string with no characters, which means no quote is used.
      *
-     * @return the quote characters.
+     * @return the quote characters in a string.
      */
-    default List<Character> quotes() {
+    default String quotes() {
         return NO_QUOTE;
     }
 
@@ -87,11 +85,12 @@ public interface ParserConfig {
 
     /**
      * Sets the block characters for the command tree.
-     * The array contains two characters, which are used to define a block of commands.
+     * The string contains two characters(e.g. '{' and '}'), which are used to define a block of commands.
+     * The default block characters is a string with no characters, which means no block is used.
      *
-     * @return the block characters.
+     * @return the block characters in a string.
      */
-    default char[] blockChars() {
+    default String blockChars() {
         return NO_BLOCK_CHARS;
     }
 }

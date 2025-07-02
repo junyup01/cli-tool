@@ -40,7 +40,7 @@ public class CommandParser {
     /**
      * Creates a new command parser with the given parser configuration and command factory.
      *
-     * @param parserConfig The parser configuration, this will be used for all commands registered with this parser.
+     * @param parserConfig   The parser configuration, this will be used for all commands registered with this parser.
      * @param commandFactory The command factory with logic for creating commands.
      */
     public CommandParser(ParserConfig parserConfig, CommandFactory commandFactory) {
@@ -53,6 +53,7 @@ public class CommandParser {
 
     /**
      * Returns the command tree.
+     *
      * @return The command tree.
      */
     public CommandTree getCommandTree() {
@@ -302,9 +303,10 @@ public class CommandParser {
             return 0;
         }
         char q = 0;
-        for (char c : parserConfig.quotes()) {
-            if (content.charAt(0) == c) {
-                q = c;
+        String quotes = parserConfig.quotes();
+        for (int i = 0; i < quotes.length(); i++) {
+            if (content.charAt(0) == quotes.charAt(i)) {
+                q = quotes.charAt(i);
                 break;
             }
         }
@@ -477,7 +479,7 @@ public class CommandParser {
     }
 
     private boolean takeCareOfQuote(char q, boolean want) {
-        return !parserConfig.quotes().isEmpty() && (want == (parserConfig.quotes().contains(q)));
+        return !parserConfig.quotes().isEmpty() && (want == (parserConfig.quotes().indexOf(q) >= 0));
     }
 
     private void switchInQuotes(char q) {
@@ -501,23 +503,23 @@ public class CommandParser {
     }
 
     private boolean isBlockStart(String s) {
-        return usingBlockStructure() && s.length() == 1 && parserConfig.blockChars()[0] == s.charAt(0);
+        return usingBlockStructure() && s.length() == 1 && parserConfig.blockChars().charAt(0) == s.charAt(0);
     }
 
     private boolean isBlockEnd(String s) {
-        return usingBlockStructure() && s.length() == 1 && parserConfig.blockChars()[1] == s.charAt(0);
+        return usingBlockStructure() && s.length() == 1 && parserConfig.blockChars().charAt(1) == s.charAt(0);
     }
 
     private boolean isBlockStart(char c) {
-        return usingBlockStructure() && parserConfig.blockChars()[0] == c;
+        return usingBlockStructure() && parserConfig.blockChars().charAt(0) == c;
     }
 
     private boolean isBlockEnd(char c) {
-        return usingBlockStructure() && parserConfig.blockChars()[1] == c;
+        return usingBlockStructure() && parserConfig.blockChars().charAt(1) == c;
     }
 
     private boolean usingBlockStructure() {
-        return parserConfig.blockChars().length == 2;
+        return parserConfig.blockChars().length() == 2;
     }
 
     private void registerNoOperationCommand() {
